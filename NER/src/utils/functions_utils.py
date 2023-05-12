@@ -46,10 +46,15 @@ def load_model_and_parallel(model, gpu_ids, ckpt_path=None, strict=True):
     if ckpt_path is not None:
         logger.info(f'Load ckpt from {ckpt_path}')
         model.load_state_dict(torch.load(ckpt_path, map_location=torch.device('cpu')), strict=strict)
-        
-    logger.info(f'Use single gpu in: {gpu_ids}')
 
-    return model, device
+    model.to(device)
+
+    if len(gpu_ids) > 1:
+        logger.info(f'Use multi gpus in: {gpu_ids}')
+        gpu_ids = [int(x) for x in gpu_ids]
+        model = torch.nn.DataParallel(model, device_ids=gpu_ids)
+    else:
+        logger.info(f'Use single gpu in: {gpu_ids}')
 
 
 def get_model_path_list(base_dir):
